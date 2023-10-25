@@ -1,0 +1,24 @@
+---
+# Source: kube-prometheus-stack/templates/prometheus/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus1-kube-prometheu-prometheus
+  labels:
+    app: kube-prometheus-stack-prometheus
+    
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: prometheus1
+    app.kubernetes.io/version: "47.3.0"
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    chart: kube-prometheus-stack-47.3.0
+    release: "prometheus1"
+    heritage: "Helm"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus1-kube-prometheu-prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus1-kube-prometheu-prometheus
+    namespace: monitoring
