@@ -14,5 +14,5 @@ helm pull prometheus-community/kube-prometheus-stack --version $fixVersion --unt
 
 
 # helm template 模板运算
-helmAppName=prometheus1
-helm template kube-prometheus-stack/ --namespace monitoring --values ./values.yaml --name-template $helmAppName --output-dir outdir-$helmAppName
+# helmAppName=prometheus1
+# helm template kube-prometheus-stack/ --namespace monitoring --values ./values.yaml --name-template $helmAppName --output-dir outdir-$helmAppName
