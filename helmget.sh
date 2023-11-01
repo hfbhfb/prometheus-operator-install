@@ -12,6 +12,9 @@ fixVersion=47.3.0
 helm pull prometheus-community/kube-prometheus-stack --version $fixVersion --untar
 
 
+# 实例化
+# helmAppName=prometheus1
+# helm install kube-prometheus-stack/ --namespace monitoring --values ./values.yaml --name-template ${helmAppName} 
 
 # helm template 模板运算
 # helmAppName=prometheus1
