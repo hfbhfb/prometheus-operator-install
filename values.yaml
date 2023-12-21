@@ -1,5 +1,8 @@
 grafana:
-  enabled: false
+  enabled: true
+  service:
+    type: NodePort
+    nodePort: 30091
 
 kube-state-metrics:
   image:
@@ -12,8 +15,6 @@ prometheusOperator:
     patch:
       enabled: true
       image:
-        registry: docker.io
-        repository: sdedu/kube-webhook-certgen
         tag: v20230407 #v20221220-controller-v1.5.1-58-g787ea74b6
 
 prometheus:
