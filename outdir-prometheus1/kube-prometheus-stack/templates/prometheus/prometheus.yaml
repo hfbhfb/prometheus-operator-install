@@ -71,5 +71,15 @@ spec:
       release: "prometheus1"
 
   scrapeConfigNamespaceSelector: {}
+  storage:
+    volumeClaimTemplate:
+      selector: {}
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+        storageClassName: mylocalsc1
   portName: http-web
   hostNetwork: false
