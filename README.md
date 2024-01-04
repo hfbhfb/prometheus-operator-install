@@ -23,3 +23,6 @@ https://blog.csdn.net/Richardlygo/article/details/101014112
 2. 找到对应的服务，放开metrics指标locale
 etcd.yaml  kube-apiserver.yaml  kube-controller-manager.yaml  kube-scheduler.yaml
 
+## thanos 文档  （ https://blog.csdn.net/u010533742/article/details/124944538 ）
+
+

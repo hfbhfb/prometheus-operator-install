@@ -1,0 +1,113 @@
+---
+# Source: thanos/templates/compactor/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos1-compactor
+  namespace: "monitoring"
+  labels:
+    app.kubernetes.io/name: thanos
+    helm.sh/chart: thanos-12.11.2
+    app.kubernetes.io/instance: thanos1
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: compactor
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos
+      app.kubernetes.io/instance: thanos1
+      app.kubernetes.io/component: compactor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos
+        helm.sh/chart: thanos-12.11.2
+        app.kubernetes.io/instance: thanos1
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: compactor
+      annotations:
+        checksum/objstore-configuration: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+    spec:
+      
+      serviceAccountName: thanos1-compactor
+      automountServiceAccountToken: true
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: thanos
+                    app.kubernetes.io/instance: thanos1
+                    app.kubernetes.io/component: compactor
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: compactor
+          image: docker.io/bitnami/thanos:0.31.0-debian-11-r16
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+          args:
+            - compact
+            - --log.level=info
+            - --log.format=logfmt
+            - --http-address=0.0.0.0:10902
+            - --data-dir=/data
+            - --retention.resolution-raw=30d
+            - --retention.resolution-5m=30d
+            - --retention.resolution-1h=10y
+            - --consistency-delay=30m
+            - --objstore.config-file=/conf/objstore.yml
+            - --wait
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+            httpGet:
+              path: /-/healthy
+              port: http
+              scheme: HTTP
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+            httpGet:
+              path: /-/ready
+              port: http
+              scheme: HTTP
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+            - name: objstore-config
+              mountPath: /conf
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: objstore-config
+          secret:
+            secretName: bucket-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: thanos1-compactor

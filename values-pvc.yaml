@@ -26,6 +26,7 @@ prometheus:
     type: NodePort
     nodePort: 30090
   prometheusSpec:
+    retention: 2h # 只保留2小时的数据
     storageSpec: 
       volumeClaimTemplate:
         spec:

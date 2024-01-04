@@ -33,7 +33,7 @@ spec:
   logFormat:  logfmt
   listenLocal: false
   enableAdminAPI: false
-  retention: "10d"
+  retention: "2h"
   tsdb:
     outOfOrderTimeWindow: 0s
   walCompression: true
@@ -73,7 +73,6 @@ spec:
   scrapeConfigNamespaceSelector: {}
   storage:
     volumeClaimTemplate:
-      selector: {}
       spec:
         accessModes:
         - ReadWriteOnce
@@ -81,5 +80,9 @@ spec:
           requests:
             storage: 50Gi
         storageClassName: mylocalsc1
+  thanos:
+    objectStorageConfig:
+      key: objstore.yml
+      name: bucket-config
   portName: http-web
   hostNetwork: false

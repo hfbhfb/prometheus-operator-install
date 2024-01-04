@@ -1,0 +1,65 @@
+#此处对应kube-prometheus-stack的values.yaml配置中的prometheus.extraSecret.name
+existingObjstoreSecret: "bucket-config"
+query:
+  service:
+    type: NodePort
+    nodePorts:
+      http: "30453"
+  replicaLabel: [lady_replica]                             #去重标记，注意修改
+  dnsDiscovery:
+    sidecarsService: "prometheus1-kube-prometheu-thanos-discovery"  #kube-prometheus-stack的thanos-servicename
+    sidecarsNamespace: "monitoring"                            #kube-prometheus-stack部暑空间   
+  # ingress:
+  #   enabled: true
+  # ingress:
+  #   enabled: true
+  #   hostname: thanos.lady.cn    #注意修改
+queryFrontend:                 #提供给grafana查询使用，看下图
+  enabled: true
+  extraFlags:
+  - --query-frontend.compress-responses            #压缩http请求
+  - --query-range.split-interval=12h               # 将请求按照时间间隔分隔
+  - --query-range.max-retries-per-request=5        
+  - --query-frontend.log-queries-longer-than=10s    # 打印查询时间大于指定值的查询时间。
+  - --labels.split-interval=12h                     # 将请求按照时间间隔分隔
+  - --labels.max-retries-per-request=5
+  - --query-range.align-range-with-step       # 使其开始和结束与步长保持一致，以获得更好的缓存能力。
+  - --query-range.max-query-length=0        # 限制查询的时间范围，设置为0禁用，1h只能查询1小时范围数据
+  - --query-range.response-cache-max-freshness=1m   # 范围查询请求的最近允许的可缓存结果，为了防止最近的缓存结果不断变化
+  - |-
+    --query-range.response-cache-config="config":
+      max_size: "200MB"
+      max_size_items: 0
+      validity: 0s
+    type: IN-MEMORY
+  - |-
+    --labels.response-cache-config="config":
+      max_size: "200MB"
+      max_size_items: 0
+      validity: 0s
+    type: IN-MEMORY
+  # ingress:
+  #   enabled: true
+  #   hostname: thanos-frontend.lady.cn
+compactor:
+  enabled: true
+  persistence:
+    enabled: true             #生产环境设为true,持久化
+    storageClassName: "mylocalsc1"
+storegateway:
+  enabled: true 
+  persistence:
+    enabled: true             #生产环境设为true,持久化
+    storageClassName: "mylocalsc1"
+ruler:
+  enabled: true
+  replicaLabel: lady_replica              #去重标记，注意修改
+  alertmanagers:
+  - http://prometheus1-kube-prometheu-alertmanager:9093       #kube-prometheus-stack的servicename地址
+  existingConfigmap: "prometheus-prometheus1-kube-prometheu-prometheus-rulefiles-0"   #kube-prometheus-stack的ruler规则配置
+  persistence:
+    enabled: true             #生产环境设为true,持久化
+    storageClassName: "mylocalsc1"             #生产环境设为true,持久化
+  # ingress:
+  #   enabled: true
+  #   hostname: thanos-ruler.lady.cn     #注意修改

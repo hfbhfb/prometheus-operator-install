@@ -1,0 +1,116 @@
+---
+# Source: thanos/templates/query-frontend/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos1-query-frontend
+  namespace: "monitoring"
+  labels:
+    app.kubernetes.io/name: thanos
+    helm.sh/chart: thanos-12.11.2
+    app.kubernetes.io/instance: thanos1
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: query-frontend
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos
+      app.kubernetes.io/instance: thanos1
+      app.kubernetes.io/component: query-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos
+        helm.sh/chart: thanos-12.11.2
+        app.kubernetes.io/instance: thanos1
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: query-frontend
+    spec:
+      
+      serviceAccountName: thanos1-query-frontend
+      automountServiceAccountToken: true
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: thanos
+                    app.kubernetes.io/instance: thanos1
+                    app.kubernetes.io/component: query-frontend
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: query-frontend
+          image: docker.io/bitnami/thanos:0.31.0-debian-11-r16
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+          args:
+            - query-frontend
+            - --log.level=info
+            - --log.format=logfmt
+            - --http-address=0.0.0.0:10902
+            - --query-frontend.downstream-url=http://thanos1-query:9090
+            - --query-frontend.compress-responses
+            - --query-range.split-interval=12h
+            - --query-range.max-retries-per-request=5
+            - --query-frontend.log-queries-longer-than=10s
+            - --labels.split-interval=12h
+            - --labels.max-retries-per-request=5
+            - --query-range.align-range-with-step
+            - --query-range.max-query-length=0
+            - --query-range.response-cache-max-freshness=1m
+            - |-
+              --query-range.response-cache-config="config":
+                max_size: "200MB"
+                max_size_items: 0
+                validity: 0s
+              type: IN-MEMORY
+            - |-
+              --labels.response-cache-config="config":
+                max_size: "200MB"
+                max_size_items: 0
+                validity: 0s
+              type: IN-MEMORY
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+            httpGet:
+              path: /-/healthy
+              port: http
+              scheme: HTTP
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+            httpGet:
+              path: /-/ready
+              port: http
+              scheme: HTTP
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+      volumes:

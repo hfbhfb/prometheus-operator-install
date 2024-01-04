@@ -1,0 +1,102 @@
+---
+# Source: thanos/templates/query/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos1-query
+  namespace: "monitoring"
+  labels:
+    app.kubernetes.io/name: thanos
+    helm.sh/chart: thanos-12.11.2
+    app.kubernetes.io/instance: thanos1
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: query
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos
+      app.kubernetes.io/instance: thanos1
+      app.kubernetes.io/component: query
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos
+        helm.sh/chart: thanos-12.11.2
+        app.kubernetes.io/instance: thanos1
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: query
+    spec:
+      
+      serviceAccountName: thanos1-query
+      automountServiceAccountToken: true
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: thanos
+                    app.kubernetes.io/instance: thanos1
+                    app.kubernetes.io/component: query
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: query
+          image: docker.io/bitnami/thanos:0.31.0-debian-11-r16
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+          args:
+            - query
+            - --log.level=info
+            - --log.format=logfmt
+            - --grpc-address=0.0.0.0:10901
+            - --http-address=0.0.0.0:10902
+            - --query.replica-label=lady_replica
+            - --endpoint=dnssrv+_grpc._tcp.prometheus1-kube-prometheu-thanos-discovery.monitoring.svc.cluster.local
+            - --endpoint=dnssrv+_grpc._tcp.thanos1-storegateway.monitoring.svc.cluster.local
+            - --endpoint=dnssrv+_grpc._tcp.thanos1-ruler.monitoring.svc.cluster.local
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+            - name: grpc
+              containerPort: 10901
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+            httpGet:
+              path: /-/healthy
+              port: http
+              scheme: HTTP
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+            httpGet:
+              path: /-/ready
+              port: http
+              scheme: HTTP
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+      volumes:

@@ -1,0 +1,58 @@
+grafana:
+  enabled: true
+  service:
+    type: NodePort
+    nodePort: 30091
+
+kube-state-metrics:
+  image:
+    registry: docker.io
+    repository: wsnbwz/kube-state-metrics
+    tag: "v2.9.2"
+
+prometheusOperator:
+  admissionWebhooks:
+    patch:
+      enabled: true
+      image:
+        registry: docker.io
+        repository: sdedu/kube-webhook-certgen
+        tag: v20230407 #v20221220-controller-v1.5.1-58-g787ea74b6
+
+prometheus:
+  ## Configuration for Prometheus service
+  ##
+  service:
+    type: NodePort
+    nodePort: 30090
+  prometheusSpec:
+    retention: 2h # 只保留2小时的数据
+    storageSpec: 
+      volumeClaimTemplate:
+        spec:
+          storageClassName: mylocalsc1
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+    thanos:
+      objectStorageConfig:                           #thanos使用上边的secret来配置thanos-sidecar
+        name: bucket-config
+        key: objstore.yml
+  thanosService:
+    enabled: true
+  thanosServiceExternal:
+    enabled: true                       #设为开启
+    nodePort: 30187
+    type: NodePort                      #注意修改，有loadbance时，改为LoadBalancer
+  extraSecret:                                    #配置thanos的bucket-config, 里面包括了objstor(minio)的配置
+    name: bucket-config
+    data:
+      objstore.yml: |
+        type: S3
+        config:
+          bucket: "thanos"                      #minio的桶名，注意修改
+          endpoint: "minio.default.svc.cluster.local:9000"               #minio的地址
+          access_key: "IhL4xUPIFFvhonLLJETq"                       #minio的帐号
+          secret_key: "Uy4grGC77VaJUMN9xU3aluvunYR4TdxMFOjYSZbB"                #minio的密码
+          insecure: true                             #不验证tls证书

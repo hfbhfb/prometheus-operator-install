@@ -1,0 +1,32 @@
+---
+# Source: thanos/templates/storegateway/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos1-storegateway
+  namespace: "monitoring"
+  labels:
+    app.kubernetes.io/name: thanos
+    helm.sh/chart: thanos-12.11.2
+    app.kubernetes.io/instance: thanos1
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: storegateway
+    
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9090
+      targetPort: http
+      protocol: TCP
+      name: http
+      nodePort: null
+    - port: 10901
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: thanos
+    app.kubernetes.io/instance: thanos1
+    app.kubernetes.io/component: storegateway
