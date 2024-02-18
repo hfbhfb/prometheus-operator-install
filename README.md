@@ -13,8 +13,8 @@ make uninstall
 
 
 访问： http://192.168.88.92:30090/
-普罗访问： http://render.tpddns.cn:30090/
-grafana访问： http://render.tpddns.cn:30091/   默认密码：prom-operator
+普罗访问： http://192.168.124.246:30090/
+grafana访问： http://192.168.124.246:30091/   默认密码：prom-operator
 
 
 ## 注：几个servicemonitor 抓取不到指标的问题排查
@@ -25,4 +25,12 @@ etcd.yaml  kube-apiserver.yaml  kube-controller-manager.yaml  kube-scheduler.yam
 
 ## thanos 文档  （ https://blog.csdn.net/u010533742/article/details/124944538 ）
 
+
+
+
+## operator参数配置说明
+https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md
+
+## prometheus参数配置说明
+https://github.com/prometheus/prometheus/blob/main/docs/configuration/configuration.md
 
