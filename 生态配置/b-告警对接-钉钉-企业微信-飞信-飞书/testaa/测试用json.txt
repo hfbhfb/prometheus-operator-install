@@ -1,0 +1,41 @@
+{
+    "alerts": [
+
+        {
+            "annotations": {
+                "grafana": "https://hfbhfb.github.io/test-helm-repo/pic1.png", 
+                "summary": "Error on c.example"
+            },
+            "endsAt": "0001-01-01T00:00:00Z",
+            "generatorURL": "http://prometheus.example",
+            "labels": {
+                "alertname": "test-alert",
+                "instance": "b.example",
+                "project": "test-project",
+                "service": "test-service",
+                "severity": "major"
+            },
+            "startsAt": "2017-10-06T16:21:28.214665326+09:00",
+            "fingerprint": "77219b85044057b3",
+            "status": "firing"
+        }
+    ],
+    "commonAnnotations": {
+        "grafana": "https://hfbhfb.github.io/test-helm-repo/pic1.png"
+    },
+    "commonLabels": {
+        "alertname": "test-alert",
+        "project": "test-project",
+        "service": "test-service",
+        "severity": "major"
+    },
+    "externalURL": "http://alertmanager.example",
+    "groupKey": "{}:{project=\"test-project\", service=\"test-service\"}",
+    "groupLabels": {
+        "project": "test-project",
+        "service": "test-service"
+    },
+    "receiver": "default",
+    "status": "firing",
+    "version": "4"
+}

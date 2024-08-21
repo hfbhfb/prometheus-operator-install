@@ -1,0 +1,103 @@
+
+# 定义prome-alert-trans的Deployment
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: prome-alert-trans
+  name: prome-alert-trans
+spec:
+  serviceName: "prome-alert-trans"
+  selector:
+    matchLabels:
+      app: prome-alert-trans
+  template:
+    metadata:
+      labels:
+        app: prome-alert-trans
+    spec:
+      containers:
+      - image: {{ .Values.Img }} # swr.cn-north-4.myhuaweicloud.com/hfbbg4/prometheus-alert:v0.0.2 # hefabao/prometheus-alert:v0.0.2 # 官方 feiyu563/prometheus-alert:latest #像是是放了个自身的广告
+        name: prome-alert-trans
+        env:
+        - name: PA_LOGIN_USER
+          value: "prometheusalertmm1"
+        - name: PA_LOGIN_PASSWORD
+          value: "prometheusalertmm1"
+        - name: PA_TITLE
+          value: "PrometheusAlert"
+        - name: PA_OPEN_FEISHU
+          value: "1"
+        - name: PA_OPEN_DINGDING
+          value: "1"
+        - name: PA_OPEN_WEIXIN
+          value: "1"
+        # - name: PA_FSURL
+        #   value: "https://open.feishu.cn/open-apis/bot/v2/hook/08409dc4-6ef3-4893-9648-bb72e024dc56"
+        - name: PA_DDURL
+          value: "https://oapi.dingtalk.com/robot/send?access_token=8ab8ebb239d957c7aaba03c8619392f48dc6836fa7d85cc166c3135d6fa98537"
+          # open-dingding-secret open_dingding_secret
+        # - name: PA_open_dingding_secret open_dingding_secret=0
+        # - name: PA_open_dingding_secret
+        #   value: "1"
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: alertvolume
+          mountPath: /app/db
+
+  volumeClaimTemplates:
+  - metadata:
+      name: alertvolume
+    spec:
+      storageClassName: {{ .Values.storage.classname }}
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage:  {{ .Values.storage.size }}
+
+---
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: prome-alert-transcm
+# data:
+#   app.conf: |
+#     #---------------------↓全局配置-----------------------
+#     #告警消息标题
+#     title=PrometheusAlert
+#     #钉钉告警 告警logo图标地址
+#     logourl=https://raw.githubusercontent.com/feiyu563/PrometheusAlert/master/doc/alert-center.png
+#     #钉钉告警 恢复logo图标地址
+#     rlogourl=https://raw.githubusercontent.com/feiyu563/PrometheusAlert/master/doc/alert-center.png
+
+#     #---------------------↓webhook-----------------------
+#     #是否开启钉钉告警通道,可同时开始多个通道0为关闭,1为开启
+#     open-dingding=1
+#     #默认钉钉机器人地址
+#     ddurl=https://oapi.dingtalk.com/robot/send?access_token=8ab8ebb239d957c7aaba03c8619392f48dc6836fa7d85cc166c3135d6fa98537&secret=SECd5cfae0480e5b9b82a924ad4caa2282b6dd98e0778fcfcc812d2c7668fbc0704
+#     #是否开启 @所有人(0为关闭,1为开启)
+#     dd_isatall=1
+#     #是否开启钉钉机器人加签，0为关闭,1为开启
+#     # 使用方法：https://oapi.dingtalk.com/robot/send?access_token=XXXXXX&secret=mysecret
+#     open-dingding-secret=SECd5cfae0480e5b9b82a924ad4caa2282b6dd98e0778fcfcc812d2c7668fbc0704
+
+---
+#定义prome-alert-trans的Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: svc-prome-alert-trans
+  name: svc-prome-alert-trans
+  
+spec:
+  selector:
+    app: prome-alert-trans
+  type: NodePort
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+    nodePort: 30388

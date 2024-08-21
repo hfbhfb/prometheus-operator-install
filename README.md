@@ -13,8 +13,8 @@ make uninstall
 
 
 访问： http://192.168.88.92:30090/
-普罗访问： http://192.168.124.246:30090/
-grafana访问： http://192.168.124.246:30091/   默认密码：prom-operator
+普罗访问： http://192.168.113.249:30090/
+grafana访问： http://192.168.113.249:30091/   默认密码：prom-operator
 
 
 ## 注：几个servicemonitor 抓取不到指标的问题排查

@@ -2,6 +2,7 @@
 
 helmAppName=prometheus1
 AAAConfig=values.yaml
+NS=monitoring
 
 RemoteWriteConfig=values-remotewrite.yaml
 
@@ -15,6 +16,18 @@ install:
 uninstall:
 	helm uninstall --namespace monitoring ${helmAppName} 
 
+get:
+	kubectl get po -n ${NS}
+	kubectl get Prometheus -n ${NS}
+	kubectl get svc -n ${NS}
+	kubectl get Prometheus -n ${NS} -oyaml
+
+crd:
+	kubectl get Prometheus -n ${NS} prometheus1-kube-prometheu-prometheus -oyaml
+	#kubectl get Prometheus -n ${NS} prometheus1-kube-prometheu-prometheus -oyaml |grep -C 10 prometheus1-kube-prometheu-alertmanager
+
+svc:
+	kubectl get svc -n ${NS}
 
 all:
 	bash helmget.sh

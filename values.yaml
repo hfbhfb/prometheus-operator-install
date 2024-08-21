@@ -35,3 +35,11 @@ prometheus:
           resources:
             requests:
               storage: 50Gi
+
+alertmanager:
+  service:
+    ## Port to expose on each node
+    ## Only used if service.type is 'NodePort'
+    ##
+    nodePort: 30903
+    type: NodePort

@@ -1,0 +1,37 @@
+  # ruleSelector:
+  #   matchLabels:
+  #     release: prometheus1
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    release: prometheus1
+  name: workload1
+  namespace: monitoring
+spec:
+  groups:
+  - name: alert-workload
+    rules:
+    - alert: POD CPU使用率超过80%
+      annotations:
+        description: |-
+          Container CPU usage is above 80%
+            VALUE = {{ $value }}%
+            LABELS = {{ $labels }}
+        info: POD {{ $labels.pod }}的CPU使用率超过80%, 当前POD所属集群为{{ $labels.cluster_name}}, 运行在{{ $labels.node }}节点上, 所属命名空间集合（组织）为{{ $labels.label_Organization}}, 所属命名空间为{{ $labels.namespace }}, 当前CPU使用率为{{ printf "%.2f" $value }}%
+      expr: 100 * (sum(irate(container_cpu_usage_seconds_total{image!="",container!="POD"}[5m])) by (node,pod,namespace,cluster_name) / (sum(kube_pod_container_resource_limits{resource="cpu",unit="core"}) by (node,pod,namespace,cluster_name) != 0))* on(pod,namespace)  group_right(node) (kube_pod_labels * on(namespace,cluster_name) group_left(label_Organization) kube_namespace_labels) >0.5
+      for: 1m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: POD CPU使用率超过80%
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        namespace: '{{ $labels.namespace }}'
+        node: '{{ $labels.node }}'
+        organization: '{{ $labels.label_Organization }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Pod
+        resource_name: '{{ $labels.pod }}'
+        resourcetype: Pod
+        severity: minor
+        source: prometheus

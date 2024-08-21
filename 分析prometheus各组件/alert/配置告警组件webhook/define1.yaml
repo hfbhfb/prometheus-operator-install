@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  alertmanager.yaml: cmVjZWl2ZXJzOgotIG5hbWU6ICJEZWZhdWx0IgogIHdlYmhvb2tfY29uZmlnczoKICAtIHVybDogaHR0cDovLzE5Mi4xNjguMTEzLjI0OTozMDM4OC9wcm9tZXRoZXVzYWxlcnQ/dHlwZT1kZCZ0cGw9cHJvbWV0aGV1cy1kZCZkZHVybD1odHRwczovL29hcGkuZGluZ3RhbGsuY29tL3JvYm90L3NlbmQ/YWNjZXNzX3Rva2VuPThhYjhlYmIyMzlkOTU3YzdhYWJhMDNjODYxOTM5MmY0OGRjNjgzNmZhN2Q4NWNjMTY2YzMxMzVkNmZhOTg1MzcKICAgIHNlbmRfcmVzb2x2ZWQ6IHRydWUKCg==
+kind: Secret
+metadata:
+  labels:
+    release: prometheus1
+  name: alertmanager-prometheus1-kube-prometheu-alertmanager
+  namespace: monitoring
+type: Opaque

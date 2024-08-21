@@ -1,0 +1,10 @@
+
+
+Img: swr.cn-north-4.myhuaweicloud.com/hfbbg4/prometheus-alert:v4.9.1 #swr.cn-north-4.myhuaweicloud.com/hfbbg4/prometheus-alert:v0.0.2
+
+storage:
+  classname: "mylocalsc1" # "mylocalsc1" # csi-disk-topology
+  size: "5Gi"
+
+nodeport:
+  num: "30888"

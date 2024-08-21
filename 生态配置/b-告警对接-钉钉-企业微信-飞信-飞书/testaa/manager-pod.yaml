@@ -1,0 +1,367 @@
+Name:                     node-prometheues
+Namespace:                cce-monitor
+Labels:                   app=node-prometheues
+Annotations:              <none>
+Selector:                 prometheus=server
+Type:                     NodePort
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.247.33.137
+IPs:                      10.247.33.137
+Port:                     9090-9090  9090/TCP
+TargetPort:               9090/TCP
+NodePort:                 9090-9090  31769/TCP
+Endpoints:                172.16.216.98:9090
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:                   <none>
+[root@ecs-aa5f-wx1145324 testaa]# kubectl get po -n cce-monitor 
+NAME                                             READY   STATUS    RESTARTS       AGE
+cie-console-67d6fdb8c6-kg4rk                     1/1     Running   1 (174m ago)   21h
+cie-console-new-7466545867-xshq9                 1/1     Running   1 (174m ago)   21h
+cluster-problem-detector-77bdd47bc4-nw82h        1/1     Running   1 (174m ago)   20h
+cop-addon-kube-event-exporter-666c6d8999-t4nwv   1/1     Running   1 (174m ago)   21h
+cop-alert-center-alertmanager-0                  2/2     Running   0              132m
+cop-alert-center-alertserver-fc4d47d54-9qsd4     1/1     Running   1 (174m ago)   17h
+copaddon-prometheus-server-0                     2/2     Running   2 (174m ago)   20h
+custom-metrics-apiserver-5f96bc58d6-l26n8        1/1     Running   2 (173m ago)   20h
+grafana-559c4597f7-p872h                         1/1     Running   1 (174m ago)   20h
+intelligent-detect-957b4b46b-mpr2h               1/1     Running   2 (171m ago)   21h
+kube-state-metrics-57d945cd7f-drlt7              1/1     Running   2 (173m ago)   20h
+monitor-apiserver-6c998747c8-dmgjl               1/1     Running   2 (171m ago)   171m
+node-exporter-f7hlh                              1/1     Running   1 (174m ago)   20h
+node-exporter-lnxdn                              1/1     Running   1 (174m ago)   20h
+prome-alert-trans-0                              1/1     Running   0              126m
+prometheus-operator-666dd4f94d-cllrf             1/1     Running   1 (174m ago)   20h
+smn-75f48579cc-fz45x                             1/1     Running   1 (174m ago)   21h
+[root@ecs-aa5f-wx1145324 testaa]# kubectl get po -n cce-monitor | grep  -i mana
+cop-alert-center-alertmanager-0                  2/2     Running   0              132m
+[root@ecs-aa5f-wx1145324 testaa]# kubectl get po -n cce-monitor cop-alert-center-alertmanager-0 -oyaml
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    certificate.cceagile.io/cluster-ca: restart
+    certificate.cceagile.io/platform-ca: restart
+    certificate.cceagile.io/platform-cert: restart
+    certificate.cceagile.io/platform-db: restart
+    cni.projectcalico.org/containerID: 0191521226d0c596d5457ead3d9f4ac49868e30391e057c6b3bd18648bde4214
+    cni.projectcalico.org/podIP: 172.16.39.218/32
+    cni.projectcalico.org/podIPs: 172.16.39.218/32
+    kubectl.kubernetes.io/restartedAt: "2024-08-14T10:18:24+08:00"
+  creationTimestamp: "2024-08-14T02:18:25Z"
+  generateName: cop-alert-center-alertmanager-
+  labels:
+    app: cop-alert-center
+    apps.kubernetes.io/pod-index: "0"
+    chart: cop-alert-center-24.3.0
+    component: alertmanager
+    controller-revision-hash: cop-alert-center-alertmanager-8b4c9bcb5
+    heritage: Helm
+    release: cop-alert-center
+    statefulset.kubernetes.io/pod-name: cop-alert-center-alertmanager-0
+  name: cop-alert-center-alertmanager-0
+  namespace: cce-monitor
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: StatefulSet
+    name: cop-alert-center-alertmanager
+    uid: 38e09610-d0d9-43a1-90d4-0723d1ad2985
+  resourceVersion: "96674"
+  uid: 58a59899-9a43-40e9-8341-87d25f6308f3
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - preference:
+          matchExpressions:
+          - key: cop.master
+            operator: NotIn
+            values:
+            - master
+        weight: 10
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: cop.manage
+            operator: In
+            values:
+            - manage
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: component
+            operator: In
+            values:
+            - alertmanager
+        topologyKey: kubernetes.io/hostname
+  containers:
+  - args:
+    - --statefulset.name=cop-alert-center-alertmanager
+    - --server.name=cop-alert-center-alertmanager-headless
+    - --config.file=/etc/config/alertmanager.yml
+    - --web.config.file=/etc/tls/tls.yml
+    - --storage.path=/data
+    - --web.get-concurrency=200
+    - --web.listen-address=$(POD_IP):9090
+    - --web.external-listen-address=$(POD_IP):9093
+    - --log.level=debug
+    env:
+    - name: PAAS_CRYPTO_PATH
+      value: /var/paas/tenant-mgr/cipher
+    - name: PAAS_SSL_ROOT
+      value: /etc/certs
+    - name: DEPLOY
+      value: AGILE
+    - name: MYSQL_DB
+      value: ALERTSDB
+    - name: MYSQL_IP
+      valueFrom:
+        secretKeyRef:
+          key: db-address
+          name: alert-db-secret
+    - name: MYSQL_PORT
+      valueFrom:
+        secretKeyRef:
+          key: db-port
+          name: alert-db-secret
+    - name: MYSQL_USER
+      valueFrom:
+        secretKeyRef:
+          key: alert-user
+          name: alert-db-secret
+    - name: MYSQL_PWD
+      valueFrom:
+        secretKeyRef:
+          key: alert-password-secondary
+          name: alert-db-secret
+    - name: POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    image: ccetest.cc.com/cce/alertmanager:24.3.0
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /#/status
+        port: 9090
+        scheme: HTTPS
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 30
+    name: cop-alert-center-alertmanager
+    ports:
+    - containerPort: 9090
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /#/status
+        port: 9090
+        scheme: HTTPS
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 30
+    resources:
+      limits:
+        cpu: "4"
+        memory: 8Gi
+      requests:
+        cpu: 100m
+        memory: 300Mi
+    securityContext:
+      runAsGroup: 1000
+      runAsUser: 1000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /certs
+      name: database-cert
+      readOnly: true
+    - mountPath: /var/paas/tenant-mgr/cipher
+      name: cipher-root
+    - mountPath: /etc/certs
+      name: cert
+    - mountPath: /etc/config
+      name: config-volume
+    - mountPath: /data
+      name: storage-volume
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-87cxm
+      readOnly: true
+  - args:
+    - --volume-dir=/etc/config
+    - --webhook-url=https://$(POD_IP):9090/-/reload
+    - --web.listen-address=127.0.0.1:9533
+    env:
+    - name: POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    image: ccetest.cc.com/cce/configmap-reload:24.3.0
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      exec:
+        command:
+        - /bin/bash
+        - -c
+        - test `ps -eo stat,command | grep -v grep | grep /configmap-reload | awk
+          '{print $1}' | egrep "^Z|^T" | wc -l` == 0
+      failureThreshold: 3
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    name: cop-alert-center-alertmanager-configmap-reload
+    resources:
+      limits:
+        cpu: "1"
+        memory: 300Mi
+      requests:
+        cpu: 20m
+        memory: 50Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/config
+      name: config-volume
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-87cxm
+      readOnly: true
+  dnsConfig:
+    options:
+    - name: single-request-reopen
+      value: ""
+    - name: timeout
+      value: "2"
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  hostname: cop-alert-center-alertmanager-0
+  imagePullSecrets:
+  - name: default-secret
+  nodeName: 192.168.0.66
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    fsGroup: 1000
+  serviceAccount: cop-alert-center-alertmanager
+  serviceAccountName: cop-alert-center-alertmanager
+  subdomain: cop-alert-center-alertmanager-headless
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - key: role
+    operator: Equal
+    value: manage
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  volumes:
+  - hostPath:
+      path: /var/paas/srv/kubernetes
+      type: ""
+    name: cipher-root
+  - name: cert
+    secret:
+      defaultMode: 416
+      items:
+      - key: ca.crt
+        path: ca.crt
+      - key: tls.crt
+        path: tls.crt
+      - key: tls.key
+        path: tls.key
+      secretName: tenant-management-service-server
+  - name: database-cert
+    secret:
+      defaultMode: 256
+      secretName: database-cert
+  - configMap:
+      defaultMode: 420
+      name: cop-alert-center-alertmanager
+    name: config-volume
+  - emptyDir: {}
+    name: storage-volume
+  - name: kube-api-access-87cxm
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2024-08-14T02:18:25Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2024-08-14T02:19:05Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2024-08-14T02:19:05Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2024-08-14T02:18:25Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://17b8b2e0a7baabf38d0aeb28e309642d0a116702bd2f7cb371aebccd239f8fb8
+    image: ccetest.cc.com/cce/alertmanager:24.3.0
+    imageID: docker-pullable://ccetest.cc.com/cce/alertmanager@sha256:65aa4035f67f646ee062ab5ee660c259d49efcb34ef957e2fe52419fbd1c4d91
+    lastState: {}
+    name: cop-alert-center-alertmanager
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2024-08-14T02:18:26Z"
+  - containerID: docker://2a077deccf3670450e9dc0e46483cac58ccbfa3e16ed738c2becff513882e6de
+    image: ccetest.cc.com/cce/configmap-reload:24.3.0
+    imageID: docker-pullable://ccetest.cc.com/cce/configmap-reload@sha256:dea18e58a1078ed263d869ea24385002dd5670852faa90315e57faaba2ac41be
+    lastState: {}
+    name: cop-alert-center-alertmanager-configmap-reload
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2024-08-14T02:18:26Z"
+  hostIP: 192.168.0.66
+  phase: Running
+  podIP: 172.16.39.218
+  podIPs:
+  - ip: 172.16.39.218
+  qosClass: Burstable
+  startTime: "2024-08-14T02:18:25Z"

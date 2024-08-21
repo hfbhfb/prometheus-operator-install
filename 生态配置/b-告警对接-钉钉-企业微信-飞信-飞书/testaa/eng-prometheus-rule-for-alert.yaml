@@ -1,0 +1,43 @@
+# **575wowi** PrometheusRule配置示例
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: node-eng-count
+    release: prometheus1
+  name: node-eng-count
+  namespace: monitoring
+spec:
+  groups:
+  - name: node-eng-count
+    rules:
+    - alert:  node-eng-count
+      annotations:  #定义注解,说明告警的详细信息,{{ .Labels.instance }}获取实例instance标签的值, {{ .Value }}获取expr结果
+        summary: "节点数量规则critical :  {{ .Value }} "
+        description: "节点当前数量:{{ .Value }}"
+      expr: |
+        ( sum(kube_node_info{app_kubernetes_io_instance=""}) + 2)  >= 1 
+      for: 30s
+      labels:
+        severity: critical
+        level: critical
+    - alert:  node-eng-count
+      annotations:  #定义注解,说明告警的详细信息,{{ .Labels.instance }}获取实例instance标签的值, {{ .Value }}获取expr结果
+        summary: "节点数量规则Warn : {{ .Value }} "
+        description: "节点当前数量:{{ .Value }}"
+      expr: |
+        ( sum(kube_node_info{app_kubernetes_io_instance=""}) + 1)  >= 1 
+      for: 30s
+      labels:
+        severity: warning
+        level: warning
+    - alert:  node-eng-count
+      annotations:  #定义注解,说明告警的详细信息,{{ .Labels.instance }}获取实例instance标签的值, {{ .Value }}获取expr结果
+        summary: "节点数量规则info : {{ .Value }} "
+        description: "节点当前数量:{{ .Value }}"
+      expr: |
+        sum(kube_node_info{app_kubernetes_io_instance=""})  >= 1 
+      for: 30s
+      labels:
+        severity: info
+        level: info

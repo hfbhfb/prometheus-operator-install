@@ -1,0 +1,734 @@
+
+# [root@ecs-aa5f-wx1145324 b-告警对接-钉钉-企业微信-飞信-飞书]# kubectl get PrometheusRule -n cce-monitor cce-alarm-default-v1 -oyaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  annotations:
+    meta.helm.sh/release-name: copaddon-prometheus
+    meta.helm.sh/release-namespace: cce-monitor
+  creationTimestamp: "2024-08-13T08:03:17Z"
+  generation: 1
+  labels:
+    app: prometheus
+    app.kubernetes.io/managed-by: Helm
+    release: copaddon-prometheus
+  name: cce-alarm-default-v1
+  namespace: cce-monitor
+  resourceVersion: "10407"
+  uid: 91ce8d5d-37ec-408f-9ed6-0c0dd52d440a
+spec:
+  groups:
+  - name: alert-cluster
+    rules:
+    - alert: 集群CPU使用率超过50%
+      annotations:
+        description: 集群{{ $labels.cluster_name }} CPU实际使用率超过50%, 集群当前CPU使用率为{{ printf
+          "%.2f" $value }}%
+        info: 集群{{ $labels.cluster_name }} CPU实际使用率超过50%, 集群当前CPU使用率为{{ printf "%.2f"
+          $value }}%
+      expr: 100 - (avg by(cluster_name) (irate(node_cpu_seconds_total{mode="idle"}[2m]))
+        * 100) >=50
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 集群CPU使用率超过50%
+        cce_alert_kind: resources
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: 集群CPU请求率超过80%
+      annotations:
+        description: 集群{{ $labels.cluster_name }} CPU请求率超过80%, 集群当前CPU请求率为{{ printf
+          "%.2f" $value }}%
+        info: 集群{{ $labels.cluster_name }} CPU请求率超过80%, 集群当前CPU请求率为{{ printf "%.2f"
+          $value }}%
+      expr: 100 * sum(kube_pod_container_resource_requests{resource="cpu"}) by (cluster_name)
+        / sum(kube_node_status_allocatable{resource="cpu"}) by (cluster_name) >= 80
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 集群CPU请求率超过80%
+        cce_alert_kind: resources
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: 集群内存使用率超过70%
+      annotations:
+        description: 集群{{ $labels.cluster_name }} 内存实际使用率超过70%, 集群当前内存使用率为{{ printf
+          "%.2f" $value }}%
+        info: 集群{{ $labels.cluster_name }} 内存实际使用率超过70%, 集群当前内存使用率为{{ printf "%.2f"
+          $value }}%
+      expr: 100-(avg(node_memory_MemAvailable_bytes/node_memory_MemTotal_bytes)by(cluster_name)*100)
+        >=70
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 集群内存使用率超过70%
+        cce_alert_kind: resources
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: major
+        source: prometheus
+    - alert: 集群内存请求率超过80%
+      annotations:
+        description: 集群{{ $labels.cluster_name }} 内存请求率超过80%, 集群当前内存请求率为{{ printf
+          "%.2f" $value }}%
+        info: 集群{{ $labels.cluster_name }} 内存请求率超过80%, 集群当前内存请求率为{{ printf "%.2f"
+          $value }}%
+      expr: 100 * sum(kube_pod_container_resource_requests{resource="memory"}) by
+        (cluster_name) / sum(kube_node_status_allocatable{resource="memory"}) by (cluster_name)
+        >= 80
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 集群内存请求率超过80%
+        cce_alert_kind: resources
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: 集群CCE管理组件状态异常
+      annotations:
+        description: '{{ $labels.cluster_name }}集群中CCE管理组件状态异常, 异常组件实例为{{ $labels.pod
+          }}, 组件所属命名空间为{{ $labels.namespace }}, 组件当前状态为{{ $labels.phase}}'
+        info: '{{ $labels.cluster_name }}集群中CCE管理组件状态异常, 异常组件实例为{{ $labels.pod }},
+          组件所属命名空间为{{ $labels.namespace }}, 组件当前状态为{{ $labels.phase}}'
+      expr: sum(kube_pod_status_phase{phase=~"Pending|Unknown|Failed",namespace=~"cce|kube-system|cce-monitor"})by(cluster_name,namespace,pod,phase)>0
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 集群CCE管理组件状态异常
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: platform
+        namespace: '{{ $labels.namespace }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: etcd主节点频繁切换
+      annotations:
+        description: |-
+          Etcd leader changed more than 2 times during 10 minutes
+            VALUE = {{ $value }}
+            LABELS = {{ $labels }}
+        info: 集群{{ $labels.cluster_name }}中etcd主节点切换频繁, 十分钟内切换次数为{{ $value }}
+      expr: increase(etcd_server_leader_changes_seen_total[10m]) > 2
+      for: 0m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: etcd主节点频繁切换
+        cce_alert_kind: platform
+        kind: platform
+        namespace: '{{ $labels.namespace }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: etcd主节点丢失
+      annotations:
+        description: |-
+          Etcd cluster have no leader
+            VALUE = {{ $value }}
+            LABELS = {{ $labels }}
+        info: 集群{{ $labels.cluster_name }}中etcd主节点丢失
+      expr: etcd_server_has_leader == 0
+      for: 0m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: etcd主节点丢失
+        cce_alert_kind: platform
+        kind: platform
+        namespace: '{{ $labels.namespace }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: etcd 99分位置磁盘写入延迟过高
+      annotations:
+        description: 集群{{ $labels.cluster_name }}中etcd 99分位置磁盘写入延迟过高, 当前写入延迟为{{ printf
+          "%.2f" $value }}s
+        info: 集群{{ $labels.cluster_name }}中etcd 99分位置磁盘写入延迟过高, 当前写入延迟为{{ printf "%.2f"
+          $value }}s
+      expr: histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket[2m]))
+        > 0.25
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: etcd 99分位置磁盘写入延迟过高
+        cce_alert_kind: platform
+        kind: platform
+        namespace: '{{ $labels.namespace }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: etcd 99分位置WAL写入延迟过高
+      annotations:
+        description: 集群{{ $labels.cluster_name }}中etcd 99分位置WAL写入延迟过高, 当前写入延迟为{{ printf
+          "%.2f" $value }}s
+        info: 集群{{ $labels.cluster_name }}中etcd 99分位置WAL写入延迟过高, 当前写入延迟为{{ printf "%.2f"
+          $value }}s
+      expr: histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[2m]))
+        > 0.5
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: etcd 99分位置WAL写入延迟过高
+        cce_alert_kind: platform
+        kind: platform
+        namespace: '{{ $labels.namespace }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: 客户端访问 APIServer 出错率大于1%
+      annotations:
+        description: 客户端访问 APIServer 出错率大于1%, 问题所属集群为{{ $labels.cluster_name }}, 请求错误率为{{
+          printf "%.2f" $value }}%
+        info: 客户端访问 APIServer 出错率大于1%, 问题所属集群为{{ $labels.cluster_name }}, 请求错误率为{{
+          printf "%.2f" $value }}%
+      expr: 100*(sum(rate(rest_client_requests_total{code=~"5.."}[5m])) by (instance,
+        job, cce_cluster,cluster_name) / sum(rate(rest_client_requests_total[5m]))
+        by (instance, job, cce_cluster,cluster_name)) > 1
+      for: 1m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 客户端访问 APIServer 出错率大于1%
+        cce_alert_kind: resources
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: 聚合API最近5分钟频繁报错
+      annotations:
+        description: 聚合API最近5分钟频繁报错, 问题所属集群为{{ $labels.cluster_name }}, 报错次数为{{ $value
+          }}%
+        info: 聚合API最近5分钟频繁报错, 问题所属集群为{{ $labels.cluster_name }}, 报错次数为{{ $value }}%
+      expr: sum by(name, namespace,cluster_name) (increase(aggregator_unavailable_apiservice_total[2m]))>2
+      for: 5m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 聚合API最近5分钟频繁报错
+        cce_alert_kind: resources
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: 聚合API服务最近5分钟可用性低于90%
+      annotations:
+        description: 聚合API服务最近5分钟可用性低于90%, 问题所属集群为{{ $labels.cluster_name }}, 调用成功率为{{
+          printf "%.2f" $value }}%
+        info: 聚合API服务最近5分钟可用性低于90%, 问题所属集群为{{ $labels.cluster_name }}, 调用成功率为{{ printf
+          "%.2f" $value }}%
+      expr: (1 - max by(name, namespace, cluster_name)(avg_over_time(aggregator_unavailable_apiservice[5m])))
+        * 100 < 90
+      for: 5m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 聚合API服务最近5分钟可用性低于90%
+        cce_alert_kind: resources
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: critical
+        source: prometheus
+    - alert: 配额资源使用率过高
+      annotations:
+        description: 集群{{ $labels.cluster_name }}中项目{{ $labels.namespace }}的资源{{ $labels.resource
+          }}使用率超过{{ $value | humanizePercentage }}
+        info: 集群{{ $labels.cluster_name }}中项目{{ $labels.namespace }}的资源{{ $labels.resource
+          }}使用率超过{{ $value | humanizePercentage }}
+      expr: sum by (cluster_name, namespace, resource) (kube_resourcequota{type="used"})
+        / sum by (cluster_name, namespace, resource) (kube_resourcequota{type="hard"}
+        > 0) >= 0.9
+      for: 5m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 配额资源使用率过高
+        cce_alert_kind: resources
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourceType: Cluster
+        severity: warning
+        source: prometheus
+    - alert: Kube持久卷状态异常
+      annotations:
+        description: 持久卷 {{ $labels.persistentvolume }} 处于 {{ $labels.phase }} 状态.
+        info: 持久卷 {{ $labels.persistentvolume }} 处于 {{ $labels.phase }} 状态.
+      expr: kube_persistentvolume_status_phase{phase=~"Failed|Pending"} > 0
+      for: 5m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: Kube持久卷状态异常
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourcetype: Cluster
+        severity: critical
+        source: prometheus
+    - alert: Kube持久卷声明状态异常
+      annotations:
+        description: 命名空间 {{ $labels.namespace }}中持久卷声明 {{ $labels.persistentvolumeclaim
+          }} 处于 {{ $labels.phase }} 状态.
+        info: 命名空间 {{ $labels.namespace }}中持久卷声明 {{ $labels.persistentvolumeclaim
+          }} 处于 {{ $labels.phase }} 状态.
+      expr: kube_persistentvolumeclaim_status_phase{phase=~"Failed|Pending|Lost"}
+        > 0
+      for: 5m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: Kube持久卷声明状态异常
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        namespace: '{{ $labels.namespace }}'
+        resource_kind: Cluster
+        resource_name: '{{ $labels.cluster_name }}'
+        resourcetype: Cluster
+        severity: critical
+        source: prometheus
+  - name: alert-node
+    rules:
+    - alert: 节点CPU使用率超过70%
+      annotations:
+        description: '节点:{{$labels.node}} CPU 使用率过超过70%，当前值: {{ printf "%.2f" $value
+          }}%'
+        info: '节点:{{$labels.node}} CPU 使用率过超过70%，当前值: {{ printf "%.2f" $value }}%'
+      expr: (1 - (avg by(node,cluster_name) (rate(node_cpu_seconds_total{mode="idle"}[2m]))))*100
+        > 70
+      for: 1m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 节点CPU使用率超过70%
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        node: '{{ $labels.node }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        resourceType: node
+        severity: warning
+        source: prometheus
+    - alert: 节点内存使用率超过80%
+      annotations:
+        description: '节点:{{ $labels.node }} 内存使用率过超过80%，当前值: {{ printf "%.2f" $value
+          }}%'
+        info: '节点:{{ $labels.node }} 内存使用率过超过80%，当前值: {{ printf "%.2f" $value }}%'
+      expr: (1-node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)*100 >
+        80
+      for: 1m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 节点内存使用率超过80%
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        node: '{{ $labels.node }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        resourceType: node
+        severity: warning
+        source: prometheus
+    - alert: 节点磁盘使用率超过80%
+      annotations:
+        description: '节点:{{ $labels.node }}, 设备:{{ $labels.device }}, 磁盘使用率超过80%,
+          当前值: {{ printf "%.2f" $value }}%'
+        info: '节点:{{ $labels.node }}, 设备:{{ $labels.device }}, 磁盘使用率超过80%, 当前值: {{
+          printf "%.2f" $value }}%'
+      expr: avg((1- node_filesystem_avail_bytes  / node_filesystem_size_bytes)*100)
+        by (device, node, cluster_name) > 80
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 磁盘使用率超过80%
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        kind: resources
+        node: '{{ $labels.node }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        resourceType: node
+        severity: warning
+        source: prometheus
+    - alert: 节点网络conntrack使用率超过75%
+      annotations:
+        alarm_value: '{{ $value }}'
+        description: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点网络conntrack使用量超过75%,
+          节点对应的主机为{{ $labels.nodename }}, 当前节点网络conntrack使用率为{{ printf "%.2f" $value
+          }}%'
+        info: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点网络conntrack使用量超过75%,
+          节点对应的主机为{{ $labels.nodename }}, 当前节点网络conntrack使用率为{{ printf "%.2f" $value
+          }}%'
+      expr: 100 * (node_nf_conntrack_entries / node_nf_conntrack_entries_limit) *
+        on (cluster_name,node) group_left(nodename) node_uname_info > 75
+      for: 1m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 节点网络conntrack使用率超过75%
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        node: '{{ $labels.node }}'
+        nodeName: '{{ $labels.nodename }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        severity: major
+        source: prometheus
+    - alert: 节点无可分配磁盘空间可能导致pod驱逐
+      annotations:
+        description: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点无可分配磁盘空间可能导致pod驱逐,
+          节点对应的主机为{{ $labels.nodename }}, 当前节点状态为OutOfDisk'
+        info: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点无可分配磁盘空间可能导致pod驱逐,
+          节点对应的主机为{{ $labels.nodename }}, 当前节点状态为OutOfDisk'
+      expr: kube_node_status_condition{condition="OutOfDisk",status="true"} * on (cluster_name,node)
+        group_left(nodename) node_uname_info == 1
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 节点无可分配磁盘空间可能导致pod驱逐
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        node: '{{ $labels.node }}'
+        nodeName: '{{ $labels.nodename }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        severity: critical
+        source: prometheus
+    - alert: 节点磁盘空间不足可能导致pod驱逐
+      annotations:
+        description: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点磁盘空间不足可能导致pod驱逐,
+          节点对应的主机为{{ $labels.nodename }}, 当前节点状态为DiskPressure'
+        info: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点磁盘空间不足可能导致pod驱逐,
+          节点对应的主机为{{ $labels.nodename }}, 当前节点状态为DiskPressure'
+      expr: kube_node_status_condition{condition="DiskPressure",status="true"} * on
+        (cluster_name,node) group_left(nodename) node_uname_info == 1
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: K8S节点磁盘空间不足可能导致pod驱逐
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        node: '{{ $labels.node }}'
+        nodeName: '{{ $labels.nodename }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        severity: critical
+        source: prometheus
+    - alert: 节点内存不足可能导致pod驱逐
+      annotations:
+        description: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点内存不足可能导致pod驱逐,
+          节点对应的主机为{{ $labels.nodename }}, 当前节点状态为MemoryPressure'
+        info: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点内存不足可能导致pod驱逐, 节点对应的主机为{{
+          $labels.nodename }}, 当前节点状态为MemoryPressure'
+      expr: kube_node_status_condition{condition="MemoryPressure",status="true"} *
+        on (cluster_name,node) group_left(nodename) node_uname_info == 1
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 节点内存不足可能导致pod驱逐
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        node: '{{ $labels.node }}'
+        nodeName: '{{ $labels.nodename }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        severity: critical
+        source: prometheus
+    - alert: NPU设备使用率超过90%
+      annotations:
+        description: '节点:{{ $labels.node }} NPU设备: {{ $labels.make }}-{{ $labels.npu_index
+          }}使用率过超过90%，当前使用率为:{{ printf "%.2f" $value }}%'
+        info: '{{ $labels.node }} 节点的NPU设备{{ $labels.make }}-{{ $labels.npu_index
+          }}使用率超过90%, 当前使用率为:{{ printf "%.2f" $value }}%'
+      expr: sum by (make,npu_index,instance,node)(cce_npu_utilization) >90
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: NPU设备使用率超过90%
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        make: '{{ $labels.make }}'
+        node: '{{ $labels.node }}'
+        npu_index: '{{ $labels.npu_index }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        severity: major
+        source: prometheus
+    - alert: 节点状态未就绪
+      annotations:
+        description: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点处于未就绪状态, 节点对应的主机为{{
+          $labels.nodename }}'
+        info: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点处于未就绪状态, 节点对应的主机为{{
+          $labels.nodename }}'
+      expr: kube_node_status_condition{condition="Ready",status="true"} * on (cluster_name,node)
+        group_left(nodename) node_uname_info == 0
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 节点状态未就绪
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        node: '{{ $labels.node }}'
+        nodeName: '{{ $labels.nodename }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        severity: critical
+        source: prometheus
+    - alert: Kubelet PLEG超10s
+      annotations:
+        description: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点kubelet组件PLEG操作延迟大于10s,
+          节点对应的主机为{{ $labels.nodename }}, PLEG操作耗时为{{ printf "%.2f" $value }}s'
+        info: '{{ $labels.cluster_name }}集群下的{{ $labels.node }}节点kubelet组件PLEG操作延迟大于10s,
+          节点对应的主机为{{ $labels.nodename }}, PLEG操作耗时为{{ printf "%.2f" $value }}s'
+      expr: histogram_quantile(0.99, sum(rate(kubelet_pleg_relist_duration_seconds_bucket[5m]))
+        by (cluster_name, node, le)) * on(cluster_name, node) group_left(nodename)
+        node_uname_info >=10
+      for: 10m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 节点kubelet组件PLEG操作延迟过大
+        cce_alert_kind: resources
+        cce_alert_resource: node
+        cluster_name: '{{ $labels.cluster_name }}'
+        node: '{{ $labels.node }}'
+        nodeName: '{{ $labels.nodename }}'
+        resource_kind: Node
+        resource_name: '{{ $labels.node }}'
+        severity: critical
+        source: prometheus
+  - name: alert-workload
+    rules:
+    - alert: POD CPU使用率超过80%
+      annotations:
+        description: |-
+          Container CPU usage is above 80%
+            VALUE = {{ $value }}%
+            LABELS = {{ $labels }}
+        info: POD {{ $labels.pod }}的CPU使用率超过80%, 当前POD所属集群为{{ $labels.cluster_name
+          }}, 运行在{{ $labels.node }}节点上, 所属命名空间集合（组织）为{{ $labels.label_Organization
+          }}, 所属命名空间为{{ $labels.namespace }}, 当前CPU使用率为{{ printf "%.2f" $value }}%
+      expr: 100 * (sum(irate(container_cpu_usage_seconds_total{image!="",container!="POD"}[5m]))
+        by (node,pod,namespace,cluster_name) / (sum(kube_pod_container_resource_limits{resource="cpu",unit="core"})
+        by (node,pod,namespace,cluster_name) != 0))* on(pod,namespace)  group_right(node)
+        (kube_pod_labels * on(namespace,cluster_name) group_left(label_Organization)
+        kube_namespace_labels) >80
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: POD CPU使用率超过80%
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        namespace: '{{ $labels.namespace }}'
+        node: '{{ $labels.node }}'
+        organization: '{{ $labels.label_Organization }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Pod
+        resource_name: '{{ $labels.pod }}'
+        resourcetype: Pod
+        severity: minor
+        source: prometheus
+    - alert: POD内存使用率超过90%
+      annotations:
+        description: |-
+          Container Memory usage is above 90%
+            VALUE = {{ $value }}%
+            LABELS = {{ $labels }}
+        info: POD {{ $labels.pod }}的内存使用率超过90%, 当前POD所属集群为{{ $labels.cluster_name
+          }}, 运行在{{ $labels.node }}节点上, 所属命名空间集合（组织）为{{ $labels.label_Organization
+          }}, 所属命名空间为{{ $labels.namespace }}, 当前内存使用率为{{ printf "%.2f" $value }}%
+      expr: 100 * (sum(container_memory_working_set_bytes{image!="", container!="POD"})by
+        (node,pod,namespace,cluster_name)/ (sum(kube_pod_container_resource_limits{resource="memory",unit="byte"})
+        by (node,pod,namespace,cluster_name) != 0)) * on(pod,namespace,cluster_name)  group_right(node)
+        (kube_pod_labels * on(namespace,cluster_name) group_left(label_Organization)
+        kube_namespace_labels) >90
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: POD内存使用率超过90%
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        namespace: '{{ $labels.namespace }}'
+        node: '{{ $labels.node }}'
+        organization: '{{ $labels.label_Organization }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Pod
+        resource_name: '{{ $labels.pod }}'
+        resourcetype: Pod
+        severity: critical
+        source: prometheus
+    - alert: POD频繁重启
+      annotations:
+        description: |-
+          Pod {{ $labels.pod }} is crash looping
+            VALUE = {{ $value }}
+            LABELS = {{ $labels }}
+        info: POD {{ $labels.pod }}频繁重启, 当前POD所属集群为{{ $labels.cluster_name }}, 运行在{{
+          $labels.node }}节点上, 所属命名空间集合（组织）为{{ $labels.label_Organization }}, 所属命名空间为{{
+          $labels.namespace }}, 当前POD累计重启{{ $value }}次
+      expr: sum (increase (kube_pod_container_status_restarts_total{}[2m])) by (cluster_name,namespace,pod)
+        * on(cluster_name, namespace, pod) group_right kube_pod_info * on(cluster_name,
+        pod, namespace) group_right(node) (kube_pod_labels * on(namespace,cluster_name)
+        group_left(label_Organization) kube_namespace_labels) > 0
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: POD频繁重启
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        namespace: '{{ $labels.namespace }}'
+        node: '{{ $labels.node }}'
+        organization: '{{ $labels.label_Organization }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Pod
+        resource_name: '{{ $labels.pod }}'
+        resourcetype: Pod
+        severity: critical
+        source: prometheus
+    - alert: POD状态Pending告警
+      annotations:
+        description: |-
+          Pod has been in a non-ready state for longer than 15 minutes.
+            VALUE = {{ $value }}
+            LABELS = {{ $labels }}
+        info: POD {{ $labels.pod }}处于Pending状态, 当前POD所属集群为{{ $labels.cluster_name
+          }}, 运行在{{ $labels.node }}节点上, 所属命名空间集合（组织）为{{ $labels.label_Organization
+          }}, 所属命名空间为{{ $labels.namespace }}
+      expr: sum by (cluster_name,namespace, pod) (kube_pod_status_phase{phase=~"Pending",namespace!~"cce|kube-system|cce-monitor"})
+        * on(cluster_name, namespace, pod) group_right kube_pod_info * on(cluster_name,
+        pod, namespace) group_right(node) (kube_pod_labels * on(namespace,cluster_name)
+        group_left(label_Organization) kube_namespace_labels) > 0
+      for: 2m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: POD状态Pending告警
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        namespace: '{{ $labels.namespace }}'
+        node: '{{ $labels.node }}'
+        organization: '{{ $labels.label_Organization }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Pod
+        resource_name: '{{ $labels.pod }}'
+        resourcetype: Pod
+        severity: critical
+        source: prometheus
+    - alert: POD状态Unknown告警
+      annotations:
+        description: |-
+          Pod has been in a non-ready state for longer than 15 minutes.
+            VALUE = {{ $value }}
+            LABELS = {{ $labels }}
+        info: POD {{ $labels.pod }}处于Unknown状态, 当前POD所属集群为{{ $labels.cluster_name
+          }}, 运行在{{ $labels.node }}节点上, 所属命名空间集合（组织）为{{ $labels.label_Organization
+          }}, 所属命名空间为{{ $labels.namespace }}
+      expr: min_over_time(sum by (cluster_name,namespace, pod) (kube_pod_status_phase{phase="Unknown",namespace!~"cce|kube-system|cce-monitor"})[15m:1m])
+        * on(cluster_name, namespace, pod) group_right kube_pod_info * on(cluster_name,
+        pod, namespace) group_right(node) (kube_pod_labels * on(namespace,cluster_name)
+        group_left(label_Organization) kube_namespace_labels) > 0
+      for: 0m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: POD状态Unknown告警
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        namespace: '{{ $labels.namespace }}'
+        node: '{{ $labels.node }}'
+        organization: '{{ $labels.label_Organization }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Pod
+        resource_name: '{{ $labels.pod }}'
+        resourcetype: Pod
+        severity: critical
+        source: prometheus
+    - alert: POD状态Failed告警
+      annotations:
+        description: |-
+          Pod has been in a non-ready state for longer than 15 minutes.
+            VALUE = {{ $value }}
+            LABELS = {{ $labels }}
+        info: POD {{ $labels.pod }}处于Failed状态, 当前POD所属集群为{{ $labels.cluster_name }},
+          运行在{{ $labels.node }}节点上, 所属命名空间集合（组织）为{{ $labels.label_Organization }},
+          所属命名空间为{{ $labels.namespace }}
+      expr: min_over_time(sum by (cluster_name,namespace, pod) (kube_pod_status_phase{phase="Failed",namespace!~"cce|kube-system|cce-monitor"})[15m:1m])
+        * on(cluster_name, namespace, pod) group_right kube_pod_info * on(cluster_name,
+        pod, namespace) group_right(node) (kube_pod_labels * on(namespace,cluster_name)
+        group_left(label_Organization) kube_namespace_labels) > 0
+      for: 0m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: POD状态Failed告警
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        namespace: '{{ $labels.namespace }}'
+        node: '{{ $labels.node }}'
+        organization: '{{ $labels.label_Organization }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Pod
+        resource_name: '{{ $labels.pod }}'
+        resourcetype: Pod
+        severity: critical
+        source: prometheus
+    - alert: 容器状态异常
+      annotations:
+        description: 集群 {{ $labels.cluster_name }}/项目 {{ $labels.namespace }}/pod
+          {{ $labels.pod }}/container {{ $labels.container }} 处于Waiting状态超过1分钟。
+        info: 集群 {{ $labels.cluster_name }}/项目 {{ $labels.namespace }}/pod {{ $labels.pod
+          }}/container {{ $labels.container }} 处于Waiting状态超过1分钟。
+      expr: sum by (namespace, pod, container, cluster_name) (kube_pod_container_status_waiting_reason)
+        > 0
+      for: 1m
+      labels:
+        Cluster: '{{ $labels.cluster_name }}'
+        alertname: 容器状态异常
+        cce_alert_kind: platform
+        cluster_name: '{{ $labels.cluster_name }}'
+        namespace: '{{ $labels.namespace }}'
+        pod_name: '{{ $labels.pod }}'
+        resource_kind: Pod
+        resource_name: '{{ $labels.pod }}'
+        resourcetype: Pod
+        severity: warning
+        source: prometheus
