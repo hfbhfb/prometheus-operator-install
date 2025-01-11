@@ -37,3 +37,7 @@ prometheus:
               storage: 50Gi
     remoteWrite:
     - url: http://victoriametrics1-victoria-metrics-cluster-vminsert.default:8480/insert/616/prometheus/api/v1/write
+      # name: clusteraa1
+    enableRemoteWriteReceiver: true
+    enableFeatures:
+    - remote-write-receiver

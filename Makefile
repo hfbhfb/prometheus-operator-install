@@ -34,8 +34,8 @@ all:
 
 
 build-template-remotewite:
-	rm -Rf outdir-${helmAppName}
-	helm template kube-prometheus-stack/ --namespace monitoring --values ./${RemoteWriteConfig} --name-template ${helmAppName} --output-dir outdir-${helmAppName}
+	rm -Rf outdir-remotewite-${helmAppName}
+	helm template kube-prometheus-stack/ --namespace monitoring --values ./${RemoteWriteConfig} --name-template ${helmAppName} --output-dir outdir-remotewite-${helmAppName}
 
 install-remotewite:
 	helm install kube-prometheus-stack/ --namespace monitoring --values ./${RemoteWriteConfig} --name-template ${helmAppName} 

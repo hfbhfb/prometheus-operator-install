@@ -1,0 +1,9 @@
+
+
+
+node_memory_Shmem_bytes{container="node-exporter", endpoint="http-metrics", instance="192.168.56.124:9100", job="node-exporter", namespace="monitoring", pod="prometheus1-prometheus-node-exporter-lvwrj", prometheus="monitoring/prometheus1-kube-prometheu-prometheus", prometheus_replica="prometheus-prometheus1-kube-prometheu-prometheus-0", service="prometheus1-prometheus-node-exporter"}
+
+
+
+node_memory_Shmem_bytes{container="node-exporter", endpoint="http-metrics", instance="192.168.56.124:9100", job="node-exporter", namespace="monitoring", pod="prometheus1-prometheus-node-exporter-lvwrj", service="prometheus1-prometheus-node-exporter"}
+
